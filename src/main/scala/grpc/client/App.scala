@@ -1,29 +1,33 @@
 package grpc.client
 
 import electron.raw.{Electron => RawElectron}
-import electron.{BrowserWindow, Electron}
+import electron.{BrowserWindow, ElectronApp}
 
+import scala.scalajs.js
 import scala.scalajs.js.Dynamic.{global, literal}
 import scala.scalajs.js.annotation.JSExportTopLevel
 
+class App(dirName: String, require: js.Function1[String, js.Any]) extends ElectronApp(require) {
+  var mainWindow: Option[BrowserWindow] = None
+
+}
+
 @JSExportTopLevel("GrpcClient.App")
 object App {
-  var mainWindow: Option[BrowserWindow] = None
 
 
   def main(args: Array[String]): Unit = {
-    println("Starting up Electron!")
+    println("Starting up Electron!!!")
 
     val dirName = global.__dirname
     val require = global.require
 
-    val rawElectron = require("electron").asInstanceOf[RawElectron]
-    val electron = new Electron(rawElectron)
-    val electronApp = electron.app
+    val app = new App(dirName.toString, (mod: String) => require(mod))
+    implicit val electron = app.electron
 
-    electronApp onceReady { () =>
-      mainWindow = Some(BrowserWindow(literal(width = 800, height = 600)))
-      mainWindow foreach { window =>
+    app.electronApp onceReady { () =>
+      app.mainWindow = Some(BrowserWindow(literal(width = 800, height = 600)))
+      app.mainWindow foreach { window =>
         // and load the index.html of the app.
         window.loadURL("file://" + dirName + "/index.html")
 
@@ -34,7 +38,7 @@ object App {
         // Dereference the window object, usually you would store windows
         // in an array if your app supports multi windows, this is the time
         // when you should delete the corresponding element.
-        window.on("closed"){ () => mainWindow = None }
+        window.on("closed"){ () => app.mainWindow = None }
       }
     }
   }
